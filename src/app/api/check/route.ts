@@ -64,8 +64,8 @@ export async function POST(request: NextRequest) {
     // For test mode, simulate membership check result
     if (validatedData.hash === 'abc123def456') {
       console.log('Test mode: simulating membership check')
-      // Simulate different results based on user ID for testing
-      const isMember = userId === 123456789 // Test user is member
+      // Demo user is NOT a member by default for testing non-member redirect
+      const isMember = false // userId === 123456789 // Test user is NOT member
       return NextResponse.json({ member: isMember })
     }
 
