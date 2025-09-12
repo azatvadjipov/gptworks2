@@ -97,13 +97,7 @@ export default function Home() {
                   // Check if screen dimensions suggest mobile WebView
                   (window.innerWidth < 500 && window.innerHeight < 900)
 
-                // Special case: if we're on Vercel, came from Telegram, but WebApp is NOT available, allow demo mode
-                const isVercelFromTelegram = window.location.hostname.includes('vercel.app') &&
-                  (/telegram/i.test(document.referrer) || /t\.me/i.test(document.referrer)) &&
-                  !window.Telegram?.WebApp // Only activate demo when WebApp is NOT available
-
                 console.log('Telegram environment detection:', isTelegramEnv)
-                console.log('Vercel from Telegram:', isVercelFromTelegram)
                 console.log('UserAgent:', navigator.userAgent)
                 console.log('Referrer:', document.referrer)
                 console.log('Hostname:', window.location.hostname)
@@ -111,28 +105,8 @@ export default function Home() {
                 console.log('Telegram object exists:', !!window.Telegram)
                 console.log('WebApp object exists:', !!window.Telegram?.WebApp)
 
-                if (isTelegramEnv && !isVercelFromTelegram) {
+                if (isTelegramEnv) {
                   reject(new Error('Telegram WebApp не загружается. Убедитесь, что Mini App правильно настроен в BotFather.'))
-                } else if (isVercelFromTelegram) {
-                  // Allow demo mode for Vercel + Telegram referrer
-                  console.log('Demo mode activated - proceeding without WebApp data')
-                  // Simulate successful WebApp initialization for demo
-                  if (!window.Telegram) window.Telegram = {}
-                  if (!window.Telegram.WebApp) {
-                    window.Telegram.WebApp = {
-                      initData: 'user=%7B%22id%22%3A123456789%2C%22first_name%22%3A%22Test%20User%22%2C%22username%22%3A%22testuser%22%7D&chat_instance=123456&hash=abc123def456',
-                      initDataUnsafe: {
-                        user: { id: 123456789, first_name: 'Test User', username: 'testuser' },
-                        chat_instance: '123456',
-                        hash: 'abc123def456'
-                      },
-                      version: '6.0',
-                      platform: 'demo',
-                      ready: () => console.log('Demo WebApp ready')
-                    }
-                  }
-                  resolve()
-                  return
                 } else {
                   reject(new Error('Это приложение работает только в Telegram Mini Apps. Откройте его через Telegram бота.'))
                 }

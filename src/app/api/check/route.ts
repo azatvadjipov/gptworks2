@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { validateInitData, getChatMember, InitData } from '@/lib/telegram'
+import { validateInitData, getChatMember } from '@/lib/telegram'
 
 export const runtime = 'nodejs'
 
@@ -23,31 +23,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let validatedData: InitData | null = null
-
-    // Special test mode - skip validation for mock data
-    if (initData.includes('testuser') && initData.includes('Test%20User')) {
-      console.log('Test mode: skipping initData validation')
-      // Simulate successful validation
-      const mockUser = {
-        id: 123456789,
-        first_name: 'Test User',
-        username: 'testuser'
-      }
-      validatedData = {
-        user: mockUser,
-        chat_instance: '123456',
-        hash: 'abc123def456'
-      } as InitData
-    } else {
-      // Normal validation
-      validatedData = validateInitData(initData, botToken)
-      if (!validatedData || !validatedData.user) {
-        return NextResponse.json(
-          { error: 'Invalid Telegram initData' },
-          { status: 400 }
-        )
-      }
+    // Validate Telegram initData
+    const validatedData = validateInitData(initData, botToken)
+    if (!validatedData || !validatedData.user) {
+      return NextResponse.json(
+        { error: 'Invalid Telegram initData' },
+        { status: 400 }
+      )
     }
 
     const userId = validatedData.user!.id
@@ -59,14 +41,6 @@ export async function POST(request: NextRequest) {
         { error: 'Server configuration error' },
         { status: 500 }
       )
-    }
-
-    // For test mode, simulate membership check result
-    if (validatedData.hash === 'abc123def456') {
-      console.log('Test mode: simulating membership check')
-      // Demo user is NOT a member by default for testing non-member redirect
-      const isMember = false // userId === 123456789 // Test user is NOT member
-      return NextResponse.json({ member: isMember })
     }
 
     // Check membership for real data
