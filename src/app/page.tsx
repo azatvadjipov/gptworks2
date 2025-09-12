@@ -20,6 +20,7 @@ interface TelegramWebApp {
   }
   version?: string
   platform?: string
+  ready: () => void
 }
 
 declare global {
