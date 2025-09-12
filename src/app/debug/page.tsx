@@ -3,11 +3,38 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+interface TelegramUser {
+  id: number
+  first_name: string
+  last_name?: string
+  username?: string
+  language_code?: string
+}
+
+interface TelegramWebApp {
+  initData: string
+  initDataUnsafe: {
+    user?: TelegramUser
+    chat_instance?: string
+    hash: string
+  }
+  version: string
+  platform: string
+}
+
 interface TelegramData {
   initData?: string
-  initDataUnsafe?: any
+  initDataUnsafe?: TelegramWebApp['initDataUnsafe']
   version?: string
   platform?: string
+}
+
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: TelegramWebApp
+    }
+  }
 }
 
 export default function DebugPage() {
@@ -36,7 +63,7 @@ export default function DebugPage() {
     setDevMode(isDevMode ? 'Enabled' : 'Disabled')
 
     // Check Telegram WebApp
-    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       setTelegramStatus('Detected')
     } else {
       setTelegramStatus('Not detected')
@@ -71,20 +98,21 @@ export default function DebugPage() {
       const result = await response.json()
       setApiResult(JSON.stringify(result, null, 2))
       log('API test completed: ' + response.status)
-    } catch (error: any) {
-      setApiResult('Error: ' + error.message)
-      log('API test failed: ' + error.message)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      setApiResult('Error: ' + errorMessage)
+      log('API test failed: ' + errorMessage)
     }
   }
 
   const showTelegramData = () => {
     log('Loading Telegram data...')
-    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       const data: TelegramData = {
-        initData: (window as any).Telegram.WebApp.initData,
-        initDataUnsafe: (window as any).Telegram.WebApp.initDataUnsafe,
-        version: (window as any).Telegram.WebApp.version,
-        platform: (window as any).Telegram.WebApp.platform
+        initData: window.Telegram.WebApp.initData,
+        initDataUnsafe: window.Telegram.WebApp.initDataUnsafe,
+        version: window.Telegram.WebApp.version,
+        platform: window.Telegram.WebApp.platform
       }
       setTelegramData(JSON.stringify(data, null, 2))
       log('Telegram data loaded')
