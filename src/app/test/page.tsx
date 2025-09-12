@@ -3,30 +3,6 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp?: {
-        initData: string
-        initDataUnsafe: {
-          user?: {
-            id: number
-            first_name: string
-            last_name?: string
-            username?: string
-            language_code?: string
-          }
-          chat_instance?: string
-          hash: string
-        }
-        version: string
-        platform: string
-        ready: () => void
-      }
-    }
-  }
-}
-
 export default function TestPage() {
   const router = useRouter()
 
@@ -35,8 +11,8 @@ export default function TestPage() {
     const initTelegramWebApp = () => {
       if (typeof window !== 'undefined') {
         // Create mock Telegram WebApp
-        window.Telegram = {
-          WebApp: {
+        if (window.Telegram) {
+          window.Telegram.WebApp = {
             initData: 'user=%7B%22id%22%3A123456789%2C%22first_name%22%3A%22Test%20User%22%2C%22username%22%3A%22testuser%22%7D&chat_instance=123456&hash=abc123def456',
             initDataUnsafe: {
               user: {
@@ -51,6 +27,26 @@ export default function TestPage() {
             platform: 'test',
             ready: () => {
               console.log('Telegram WebApp ready (simulated)')
+            }
+          }
+        } else {
+          window.Telegram = {
+            WebApp: {
+              initData: 'user=%7B%22id%22%3A123456789%2C%22first_name%22%3A%22Test%20User%22%2C%22username%22%3A%22testuser%22%7D&chat_instance=123456&hash=abc123def456',
+              initDataUnsafe: {
+                user: {
+                  id: 123456789,
+                  first_name: 'Test User',
+                  username: 'testuser'
+                },
+                chat_instance: '123456',
+                hash: 'abc123def456'
+              },
+              version: '6.0',
+              platform: 'test',
+              ready: () => {
+                console.log('Telegram WebApp ready (simulated)')
+              }
             }
           }
         }
