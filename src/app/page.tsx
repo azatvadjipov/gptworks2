@@ -87,11 +87,24 @@ export default function Home() {
                   window.location.hostname.includes('telegram') ||
                   // Check URL parameters
                   window.location.search.includes('tgWebAppData') ||
-                  window.location.search.includes('tgWebAppVersion')
+                  window.location.search.includes('tgWebAppVersion') ||
+                  // Check if likely in WebView (no opener, limited history)
+                  (!window.opener && window.history.length <= 1) ||
+                  // Check if screen dimensions suggest mobile WebView
+                  (window.innerWidth < 500 && window.innerHeight < 900)
 
-                // Special case: if we're on Vercel and came from Telegram, allow demo mode
-                const isVercelFromTelegram = window.location.hostname.includes('vercel.app') &&
-                  (/telegram/i.test(document.referrer) || /t\.me/i.test(document.referrer))
+                // Special case: if we're on Vercel and likely opened from Telegram, allow demo mode
+                const isVercelFromTelegram = window.location.hostname.includes('vercel.app') && (
+                  // Check referrer
+                  (/telegram/i.test(document.referrer) || /t\.me/i.test(document.referrer)) ||
+                  // Check if likely opened from Telegram mobile app (common patterns)
+                  /Android.*Telegram|Telegram.*Android|iPhone.*Telegram|Telegram.*iPhone/i.test(navigator.userAgent) ||
+                  // Check if URL contains Telegram-related parameters
+                  window.location.search.includes('tgWebApp') ||
+                  window.location.search.includes('embed') ||
+                  // Check if opened in WebView-like environment
+                  !window.opener && window.history.length <= 1
+                )
 
                 console.log('Telegram environment detection:', isTelegramEnv)
                 console.log('Vercel from Telegram:', isVercelFromTelegram)
