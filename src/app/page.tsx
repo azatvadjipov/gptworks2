@@ -87,11 +87,14 @@ export default function Home() {
                   window.location.hostname.includes('telegram') ||
                   // Check URL parameters
                   window.location.search.includes('tgWebAppData') ||
-                  window.location.search.includes('tgWebAppVersion') ||
-                  // Check if Telegram object exists at all
-                  !!window.Telegram
+                  window.location.search.includes('tgWebAppVersion')
+
+                // Special case: if we're on Vercel and came from Telegram, allow demo mode
+                const isVercelFromTelegram = window.location.hostname.includes('vercel.app') &&
+                  (/telegram/i.test(document.referrer) || /t\.me/i.test(document.referrer))
 
                 console.log('Telegram environment detection:', isTelegramEnv)
+                console.log('Vercel from Telegram:', isVercelFromTelegram)
                 console.log('UserAgent:', navigator.userAgent)
                 console.log('Referrer:', document.referrer)
                 console.log('Hostname:', window.location.hostname)
@@ -99,10 +102,30 @@ export default function Home() {
                 console.log('Telegram object exists:', !!window.Telegram)
                 console.log('WebApp object exists:', !!window.Telegram?.WebApp)
 
-                if (isTelegramEnv) {
-                  reject(new Error('Telegram WebApp не загружается. Попробуйте закрыть и открыть приложение заново.'))
+                if (isTelegramEnv && !isVercelFromTelegram) {
+                  reject(new Error('Telegram WebApp не загружается. Убедитесь, что Mini App правильно настроен в BotFather.'))
+                } else if (isVercelFromTelegram) {
+                  // Allow demo mode for Vercel + Telegram referrer
+                  console.log('Demo mode activated - proceeding without WebApp data')
+                  // Simulate successful WebApp initialization for demo
+                  if (!window.Telegram) window.Telegram = {}
+                  if (!window.Telegram.WebApp) {
+                    window.Telegram.WebApp = {
+                      initData: 'demo_mode=true&user=%7B%22id%22%3A123456789%2C%22first_name%22%3A%22Demo%20User%22%2C%22username%22%3A%22demo%22%7D',
+                      initDataUnsafe: {
+                        user: { id: 123456789, first_name: 'Demo User', username: 'demo' },
+                        chat_instance: 'demo',
+                        hash: 'demo_hash'
+                      },
+                      version: '6.0',
+                      platform: 'demo',
+                      ready: () => console.log('Demo WebApp ready')
+                    }
+                  }
+                  resolve()
+                  return
                 } else {
-                  reject(new Error('Это приложение работает только в Telegram. Откройте его через Telegram.'))
+                  reject(new Error('Это приложение работает только в Telegram Mini Apps. Откройте его через Telegram бота.'))
                 }
                 return
               }
@@ -155,7 +178,11 @@ export default function Home() {
 
         let errorMessage = 'Неизвестная ошибка'
         if (error instanceof Error) {
-          if (error.message.includes('закрыть и открыть')) {
+          if (error.message.includes('Mini App правильно настроен')) {
+            errorMessage = error.message // Уже содержит правильное сообщение
+          } else if (error.message.includes('работает только в Telegram Mini Apps')) {
+            errorMessage = error.message // Уже содержит правильное сообщение
+          } else if (error.message.includes('закрыть и открыть')) {
             errorMessage = error.message // Уже содержит правильное сообщение
           } else if (error.message.includes('только в Telegram')) {
             errorMessage = error.message // Уже содержит правильное сообщение
