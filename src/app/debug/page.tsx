@@ -35,11 +35,21 @@ export default function DebugPage() {
                       window.location.hostname.includes('vercel.app')
     setDevMode(isDevMode ? 'Enabled' : 'Disabled')
 
-    // Check Telegram WebApp
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      setTelegramStatus('Detected')
+    // Check Telegram WebApp status more thoroughly
+    if (typeof window !== 'undefined') {
+      if (window.Telegram?.WebApp) {
+        if (window.Telegram.WebApp.initData) {
+          setTelegramStatus('Ready with data')
+        } else {
+          setTelegramStatus('Detected (no initData)')
+        }
+      } else if (window.Telegram) {
+        setTelegramStatus('Partial (no WebApp)')
+      } else {
+        setTelegramStatus('Not detected')
+      }
     } else {
-      setTelegramStatus('Not detected')
+      setTelegramStatus('SSR - not available')
     }
 
     log('Debug page initialized')

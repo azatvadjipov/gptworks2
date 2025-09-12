@@ -38,6 +38,44 @@ export default function Home() {
   useEffect(() => {
     const checkMembership = async () => {
       try {
+        // Wait for Telegram WebApp to be ready
+        const waitForTelegram = () => {
+          return new Promise<void>((resolve, reject) => {
+            const maxWait = 5000 // 5 seconds max wait
+            const checkInterval = 100 // check every 100ms
+            let elapsed = 0
+
+            const check = () => {
+              elapsed += checkInterval
+
+              // Check if Telegram WebApp is available and has initData
+              if (window.Telegram?.WebApp?.initData) {
+                // Call ready() to signal that the app is ready
+                if (window.Telegram.WebApp.ready) {
+                  window.Telegram.WebApp.ready()
+                }
+                resolve()
+                return
+              }
+
+              // Timeout after maxWait
+              if (elapsed >= maxWait) {
+                reject(new Error('Telegram WebApp initialization timeout'))
+                return
+              }
+
+              // Continue checking
+              setTimeout(check, checkInterval)
+            }
+
+            // Start checking immediately
+            check()
+          })
+        }
+
+        // Wait for Telegram WebApp to be ready
+        await waitForTelegram()
+
         // Get initData from Telegram WebApp
         const initData = window.Telegram?.WebApp?.initData
 
@@ -67,8 +105,18 @@ export default function Home() {
         router.push(`/go?member=${data.member}`)
       } catch (error) {
         console.error('Error:', error)
+
+        let errorMessage = 'Неизвестная ошибка'
+        if (error instanceof Error) {
+          if (error.message.includes('timeout')) {
+            errorMessage = 'Ошибка: Telegram не отвечает. Попробуйте перезагрузить приложение.'
+          } else {
+            errorMessage = error.message
+          }
+        }
+
         setStatus('error')
-        setErrorMessage(error instanceof Error ? error.message : 'Неизвестная ошибка')
+        setErrorMessage(errorMessage)
       }
     }
 
