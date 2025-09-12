@@ -72,11 +72,21 @@ export default function DebugPage() {
 
   const testApiConnection = async () => {
     log('Testing API connection...')
+
+    // Try to get real initData first, then use mock data
+    let testInitData = window.Telegram?.WebApp?.initData
+
+    if (!testInitData) {
+      // Use mock initData for testing
+      testInitData = 'user=%7B%22id%22%3A123456789%2C%22first_name%22%3A%22Test%20User%22%2C%22username%22%3A%22testuser%22%7D&chat_instance=123456&hash=abc123def456'
+      log('Using mock initData for testing')
+    }
+
     try {
       const response = await fetch('/api/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData: 'test' })
+        body: JSON.stringify({ initData: testInitData })
       })
       const result = await response.json()
       setApiResult(JSON.stringify(result, null, 2))
