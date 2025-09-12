@@ -35,33 +35,32 @@ export default function Home() {
   const router = useRouter()
   const [status, setStatus] = useState<'loading' | 'error'>('loading')
   const [errorMessage, setErrorMessage] = useState('')
+  const [progress, setProgress] = useState(0)
 
   useEffect(() => {
     const checkMembership = async () => {
       try {
-        // Wait for Telegram WebApp to be fully ready
+        // Wait for Telegram WebApp to be fully ready (optimized for speed)
         const waitForWebApp = () => {
           return new Promise<void>((resolve, reject) => {
-            const maxAttempts = 100 // 10 seconds max (100 * 100ms)
+            const maxAttempts = 30 // 3 seconds max (30 * 100ms)
             let attempts = 0
 
             const check = () => {
               attempts++
+              const progressPercent = Math.min((attempts / maxAttempts) * 100, 100)
+              setProgress(progressPercent)
 
-              // Check if Telegram WebApp is available and has data
+              // Quick check: if Telegram WebApp is available and has data
               if (window.Telegram?.WebApp?.initData) {
                 console.log('Telegram WebApp ready with initData')
+                setProgress(100)
                 resolve()
                 return
               }
 
-              // Check if WebApp exists but no initData yet (might be loading)
-              if (window.Telegram?.WebApp && attempts > 10) {
-                console.log('Telegram WebApp detected, waiting for initData... (attempt ' + attempts + ')')
-              }
-
-              // Try to trigger WebApp initialization if available
-              if (window.Telegram?.WebApp && !window.Telegram.WebApp.initData && attempts === 5) {
+              // Early trigger: try to initialize WebApp after 0.3 seconds
+              if (window.Telegram?.WebApp && attempts === 3) {
                 console.log('Attempting to trigger WebApp ready...')
                 try {
                   if (window.Telegram.WebApp.ready) {
@@ -70,6 +69,11 @@ export default function Home() {
                 } catch (e) {
                   console.log('WebApp.ready() call failed:', e)
                 }
+              }
+
+              // Check if WebApp exists but no initData yet (might be loading)
+              if (window.Telegram?.WebApp && attempts > 5) {
+                console.log('Telegram WebApp detected, waiting for initData... (' + attempts + '/' + maxAttempts + ')')
               }
 
               if (attempts >= maxAttempts) {
@@ -229,14 +233,32 @@ export default function Home() {
     )
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="text-center">
-        <div className="text-gray-600 text-lg mb-2">
-          Загрузка
-        </div>
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-      </div>
-    </div>
-  )
+              return (
+                <div className="min-h-screen flex items-center justify-center p-4">
+                  <div className="text-center max-w-sm">
+                    <div className="text-gray-600 text-lg mb-4">
+                      Загрузка Telegram...
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                        style={{ width: `${progress}%` }}
+                      ></div>
+                    </div>
+
+                    <div className="text-sm text-gray-500 mb-2">
+                      {progress < 30 ? 'Инициализация...' :
+                       progress < 60 ? 'Подключение к Telegram...' :
+                       progress < 90 ? 'Проверка доступа...' :
+                       'Завершение...'}
+                    </div>
+
+                    <div className="text-xs text-gray-400">
+                      {Math.round(progress)}%
+                    </div>
+                  </div>
+                </div>
+              )
 }
