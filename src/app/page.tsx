@@ -14,23 +14,34 @@ declare global {
 }
 
 export default function Home() {
-  const [status, setStatus] = useState<'loading' | 'error' | 'dev'>('loading')
-  const [errorMessage, setErrorMessage] = useState('')
   const router = useRouter()
-  const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
+
+  // Check for development mode immediately
+  const isDevMode = typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+
+  // Set initial status based on development mode
+  const [status, setStatus] = useState<'loading' | 'error' | 'dev'>(() => {
+    if (isDevMode && typeof window !== 'undefined' && !window.Telegram?.WebApp?.initData) {
+      return 'dev'
+    }
+    return 'loading'
+  })
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
+    // If in development mode and no Telegram data, show dev UI
+    if (isDevMode && !window.Telegram?.WebApp?.initData) {
+      setStatus('dev')
+      return
+    }
+
     const checkMembership = async () => {
       try {
         // Get initData from Telegram WebApp
         const initData = window.Telegram?.WebApp?.initData
 
         if (!initData) {
-          if (isDevMode) {
-            // In development mode, show test options instead of error
-            setStatus('dev')
-            return
-          }
           setStatus('error')
           setErrorMessage('Ошибка: данные Telegram недоступны')
           return
