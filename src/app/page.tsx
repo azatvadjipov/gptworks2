@@ -14,9 +14,10 @@ declare global {
 }
 
 export default function Home() {
-  const [status, setStatus] = useState<'loading' | 'error'>('loading')
+  const [status, setStatus] = useState<'loading' | 'error' | 'dev'>('loading')
   const [errorMessage, setErrorMessage] = useState('')
   const router = useRouter()
+  const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
 
   useEffect(() => {
     const checkMembership = async () => {
@@ -25,6 +26,11 @@ export default function Home() {
         const initData = window.Telegram?.WebApp?.initData
 
         if (!initData) {
+          if (isDevMode) {
+            // In development mode, show test options instead of error
+            setStatus('dev')
+            return
+          }
           setStatus('error')
           setErrorMessage('Ошибка: данные Telegram недоступны')
           return
@@ -57,6 +63,38 @@ export default function Home() {
 
     checkMembership()
   }, [router])
+
+  if (status === 'dev') {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="text-blue-600 text-lg font-semibold mb-4">
+            Режим разработки
+          </div>
+          <div className="text-gray-600 mb-6">
+            Выберите сценарий для тестирования:
+          </div>
+          <div className="space-y-3">
+            <button
+              onClick={() => router.push('/go?member=true')}
+              className="w-full bg-green-600 text-white px-4 py-3 rounded hover:bg-green-700 transition-colors"
+            >
+              🟢 Тестировать как участник канала
+            </button>
+            <button
+              onClick={() => router.push('/go?member=false')}
+              className="w-full bg-red-600 text-white px-4 py-3 rounded hover:bg-red-700 transition-colors"
+            >
+              🔴 Тестировать как не участник канала
+            </button>
+          </div>
+          <div className="mt-6 text-sm text-gray-500">
+            Для включения режима разработки установите NEXT_PUBLIC_DEV_MODE=true в .env.local
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (status === 'error') {
     return (
