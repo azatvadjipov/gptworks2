@@ -3,12 +3,29 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+interface TelegramUser {
+  id: number
+  first_name: string
+  last_name?: string
+  username?: string
+  language_code?: string
+}
+
+interface TelegramWebApp {
+  initData: string
+  initDataUnsafe?: {
+    user?: TelegramUser
+    chat_instance?: string
+    hash: string
+  }
+  version?: string
+  platform?: string
+}
+
 declare global {
   interface Window {
-    Telegram: {
-      WebApp: {
-        initData: string
-      }
+    Telegram?: {
+      WebApp?: TelegramWebApp
     }
   }
 }
