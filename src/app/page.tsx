@@ -42,7 +42,7 @@ export default function Home() {
         // Wait for Telegram WebApp to be fully ready
         const waitForWebApp = () => {
           return new Promise<void>((resolve, reject) => {
-            const maxAttempts = 30 // 3 seconds max (30 * 100ms) - reduced timeout
+            const maxAttempts = 100 // 10 seconds max (100 * 100ms)
             let attempts = 0
 
             const check = () => {
@@ -56,23 +56,53 @@ export default function Home() {
               }
 
               // Check if WebApp exists but no initData yet (might be loading)
-              if (window.Telegram?.WebApp && attempts > 5) {
-                console.log('Telegram WebApp detected, waiting for initData...')
+              if (window.Telegram?.WebApp && attempts > 10) {
+                console.log('Telegram WebApp detected, waiting for initData... (attempt ' + attempts + ')')
+              }
+
+              // Try to trigger WebApp initialization if available
+              if (window.Telegram?.WebApp && !window.Telegram.WebApp.initData && attempts === 5) {
+                console.log('Attempting to trigger WebApp ready...')
+                try {
+                  if (window.Telegram.WebApp.ready) {
+                    window.Telegram.WebApp.ready()
+                  }
+                } catch (e) {
+                  console.log('WebApp.ready() call failed:', e)
+                }
               }
 
               if (attempts >= maxAttempts) {
-                console.log('Telegram WebApp initData timeout')
+                console.log('Telegram WebApp initData timeout after', attempts, 'attempts')
 
-                // Check if we're in Telegram environment but WebApp failed
-                const isTelegramEnv = /telegram/i.test(navigator.userAgent) ||
-                                    /telegram/i.test(document.referrer) ||
-                                    window.location.hostname.includes('t.me') ||
-                                    window.location.search.includes('tgWebAppData')
+                // More comprehensive Telegram environment detection
+                const isTelegramEnv =
+                  // Check user agent
+                  /telegram/i.test(navigator.userAgent) ||
+                  // Check referrer
+                  /telegram/i.test(document.referrer) ||
+                  /t\.me/i.test(document.referrer) ||
+                  // Check hostname
+                  window.location.hostname.includes('t.me') ||
+                  window.location.hostname.includes('telegram') ||
+                  // Check URL parameters
+                  window.location.search.includes('tgWebAppData') ||
+                  window.location.search.includes('tgWebAppVersion') ||
+                  // Check if Telegram object exists at all
+                  !!window.Telegram
+
+                console.log('Telegram environment detection:', isTelegramEnv)
+                console.log('UserAgent:', navigator.userAgent)
+                console.log('Referrer:', document.referrer)
+                console.log('Hostname:', window.location.hostname)
+                console.log('Search params:', window.location.search)
+                console.log('Telegram object exists:', !!window.Telegram)
+                console.log('WebApp object exists:', !!window.Telegram?.WebApp)
 
                 if (isTelegramEnv) {
-                  reject(new Error('Telegram WebApp failed to initialize. Please restart the app.'))
+                  reject(new Error('Telegram WebApp не загружается. Попробуйте закрыть и открыть приложение заново.'))
                 } else {
-                  reject(new Error('This app only works in Telegram. Please open it through Telegram.'))
+                  reject(new Error('Это приложение работает только в Telegram. Откройте его через Telegram.'))
                 }
                 return
               }
@@ -80,8 +110,8 @@ export default function Home() {
               setTimeout(check, 100)
             }
 
-            // Start checking immediately, but give it a moment first
-            setTimeout(check, 200)
+            // Start checking after a short delay to let the page settle
+            setTimeout(check, 300)
           })
         }
 
@@ -125,10 +155,10 @@ export default function Home() {
 
         let errorMessage = 'Неизвестная ошибка'
         if (error instanceof Error) {
-          if (error.message.includes('restart the app')) {
-            errorMessage = 'Ошибка: Telegram Mini App не загружается. Попробуйте перезапустить приложение.'
-          } else if (error.message.includes('only works in Telegram')) {
-            errorMessage = 'Это приложение работает только в Telegram. Откройте его через Telegram.'
+          if (error.message.includes('закрыть и открыть')) {
+            errorMessage = error.message // Уже содержит правильное сообщение
+          } else if (error.message.includes('только в Telegram')) {
+            errorMessage = error.message // Уже содержит правильное сообщение
           } else if (error.message.includes('timeout') || error.message.includes('not available')) {
             errorMessage = 'Ошибка: Не удается получить данные Telegram. Попробуйте перезагрузить страницу.'
           } else {
