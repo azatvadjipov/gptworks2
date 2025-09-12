@@ -39,10 +39,47 @@ export default function Home() {
   useEffect(() => {
     const checkMembership = async () => {
       try {
-        // Get initData from Telegram WebApp immediately
+        // Wait for Telegram WebApp to be fully ready
+        const waitForWebApp = () => {
+          return new Promise<void>((resolve, reject) => {
+            const maxAttempts = 50 // 5 seconds max (50 * 100ms)
+            let attempts = 0
+
+            const check = () => {
+              attempts++
+
+              // Check if Telegram WebApp is available and has data
+              if (window.Telegram?.WebApp?.initData) {
+                console.log('Telegram WebApp ready with initData')
+                resolve()
+                return
+              }
+
+              // Check if WebApp exists but no initData yet (might be loading)
+              if (window.Telegram?.WebApp && attempts > 10) {
+                console.log('Telegram WebApp detected, waiting for initData...')
+              }
+
+              if (attempts >= maxAttempts) {
+                console.log('Telegram WebApp initData timeout')
+                reject(new Error('Telegram WebApp data not available'))
+                return
+              }
+
+              setTimeout(check, 100)
+            }
+
+            check()
+          })
+        }
+
+        // Wait for WebApp to be ready
+        await waitForWebApp()
+
+        // Get initData from Telegram WebApp
         const initData = window.Telegram?.WebApp?.initData
 
-        // Call ready() if available to signal the app is ready
+        // Call ready() to signal the app is ready
         if (window.Telegram?.WebApp?.ready) {
           window.Telegram.WebApp.ready()
         }
@@ -76,7 +113,11 @@ export default function Home() {
 
         let errorMessage = 'Неизвестная ошибка'
         if (error instanceof Error) {
-          errorMessage = error.message
+          if (error.message.includes('timeout') || error.message.includes('not available')) {
+            errorMessage = 'Ошибка: Telegram Mini App не отвечает. Попробуйте перезагрузить приложение.'
+          } else {
+            errorMessage = error.message
+          }
         }
 
         setStatus('error')
