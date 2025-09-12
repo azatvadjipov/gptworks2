@@ -15,33 +15,27 @@ declare global {
 
 export default function Home() {
   const router = useRouter()
-
-  // Check for development mode immediately
-  const isDevMode = typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-
-  // Set initial status based on development mode
-  const [status, setStatus] = useState<'loading' | 'error' | 'dev'>(() => {
-    if (isDevMode && typeof window !== 'undefined' && !window.Telegram?.WebApp?.initData) {
-      return 'dev'
-    }
-    return 'loading'
-  })
+  const [status, setStatus] = useState<'loading' | 'error' | 'dev'>('loading')
   const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
-    // If in development mode and no Telegram data, show dev UI
-    if (isDevMode && !window.Telegram?.WebApp?.initData) {
-      setStatus('dev')
-      return
-    }
-
     const checkMembership = async () => {
       try {
+        // Check for development mode
+        const isDevMode = typeof window !== 'undefined' &&
+          (window.location.hostname === 'localhost' ||
+           window.location.hostname === '127.0.0.1' ||
+           window.location.hostname.includes('vercel.app'))
+
         // Get initData from Telegram WebApp
         const initData = window.Telegram?.WebApp?.initData
 
         if (!initData) {
+          if (isDevMode) {
+            // In development mode, show test options
+            setStatus('dev')
+            return
+          }
           setStatus('error')
           setErrorMessage('Ошибка: данные Telegram недоступны')
           return
@@ -100,7 +94,10 @@ export default function Home() {
             </button>
           </div>
           <div className="mt-6 text-sm text-gray-500">
-            Для включения режима разработки установите NEXT_PUBLIC_DEV_MODE=true в .env.local
+            Режим разработки активен на localhost и vercel.app доменах
+          </div>
+          <div className="mt-2 text-xs text-gray-400">
+            Для тестирования на production используйте /debug страницу
           </div>
         </div>
       </div>
