@@ -111,11 +111,11 @@ export default function Home() {
                   if (!window.Telegram) window.Telegram = {}
                   if (!window.Telegram.WebApp) {
                     window.Telegram.WebApp = {
-                      initData: 'demo_mode=true&user=%7B%22id%22%3A123456789%2C%22first_name%22%3A%22Demo%20User%22%2C%22username%22%3A%22demo%22%7D',
+                      initData: 'user=%7B%22id%22%3A123456789%2C%22first_name%22%3A%22Test%20User%22%2C%22username%22%3A%22testuser%22%7D&chat_instance=123456&hash=abc123def456',
                       initDataUnsafe: {
-                        user: { id: 123456789, first_name: 'Demo User', username: 'demo' },
-                        chat_instance: 'demo',
-                        hash: 'demo_hash'
+                        user: { id: 123456789, first_name: 'Test User', username: 'testuser' },
+                        chat_instance: '123456',
+                        hash: 'abc123def456'
                       },
                       version: '6.0',
                       platform: 'demo',
