@@ -40,36 +40,22 @@ export default function Home() {
   useEffect(() => {
     const checkMembership = async () => {
       try {
-        // Wait for Telegram WebApp
-        const waitForWebApp = () => {
-          return new Promise<void>((resolve, reject) => {
-            const maxAttempts = 10 // 1 second instead of 3
-            let attempts = 0
-
-            const check = () => {
-              attempts++
-              setProgress(Math.min((attempts / maxAttempts) * 100, 100))
-
-              if (window.Telegram?.WebApp?.initData) {
-                setProgress(100)
-                resolve()
-                return
-              }
-
-              if (attempts >= maxAttempts) {
-                reject(new Error('Telegram WebApp timeout'))
-                return
-              }
-
-              setTimeout(check, 100)
-            }
-
-            // Start immediately
-            check()
-          })
+        // Check if we're in Telegram Mini App
+        if (!window.Telegram?.WebApp) {
+          throw new Error('Это приложение работает только в Telegram Mini Apps. Откройте его через Telegram бота.')
         }
 
-        await waitForWebApp()
+        // Quick check for initData
+        if (!window.Telegram.WebApp.initData) {
+          setProgress(50)
+          // Wait a bit for initData to load
+          await new Promise(resolve => setTimeout(resolve, 500))
+          setProgress(100)
+        }
+
+        if (!window.Telegram.WebApp.initData) {
+          throw new Error('Telegram WebApp данные недоступны. Попробуйте перезапустить приложение.')
+        }
 
         if (window.Telegram?.WebApp?.ready) {
           window.Telegram.WebApp.ready()
@@ -157,10 +143,9 @@ export default function Home() {
                     </div>
 
                     <div className="text-sm text-gray-500 mb-2">
-                      {progress < 30 ? 'Инициализация...' :
-                       progress < 60 ? 'Подключение к Telegram...' :
-                       progress < 90 ? 'Проверка доступа...' :
-                       'Завершение...'}
+                      {progress < 50 ? 'Проверка Telegram...' :
+                       progress < 100 ? 'Получение данных...' :
+                       'Проверка доступа...'}
                     </div>
 
                     <div className="text-xs text-gray-400">
