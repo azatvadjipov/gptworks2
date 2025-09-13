@@ -43,7 +43,7 @@ export default function Home() {
         // Wait for Telegram WebApp
         const waitForWebApp = () => {
           return new Promise<void>((resolve, reject) => {
-            const maxAttempts = 30
+            const maxAttempts = 10 // 1 second instead of 3
             let attempts = 0
 
             const check = () => {
@@ -64,7 +64,8 @@ export default function Home() {
               setTimeout(check, 100)
             }
 
-            setTimeout(check, 300)
+            // Start immediately
+            check()
           })
         }
 
